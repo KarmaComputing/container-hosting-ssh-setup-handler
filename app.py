@@ -26,7 +26,7 @@ def api_key_required(view):
     @functools.wraps(view)
     def wrapped_view(**kwargs):
         try:
-            api_key = request.json['CONTAINER_HOSTING_SSH_SETUP_HANDLER_API_KEY,']
+            api_key = request.json['CONTAINER_HOSTING_SSH_SETUP_HANDLER_API_KEY']
             if api_key != CONTAINER_HOSTING_SSH_SETUP_HANDLER_API_KEY:
                 msg = "Invalid api key sent for CONTAINER_HOSTING_SSH_SETUP_HANDLER_API_KEY"
                 logging.warning(msg)
