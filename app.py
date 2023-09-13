@@ -4,12 +4,14 @@ import os
 import logging
 import functools
 import sqlite3
+import subprocess
 
 # This is likely not thread safe.
 
 CONTAINER_HOSTING_SSH_SETUP_HANDLER_API_KEY = os.getenv("CONTAINER_HOSTING_SSH_SETUP_HANDLER_API_KEY", None)
 AUTHORIZED_KEYS_PATH = os.getenv("AUTHORIZED_KEYS_PATH", None)
 APPS_DB_FULL_PATH = os.getenv("APPS_DB_FULL_PATH", None)
+KEY_VALUE_STORE_DB_FULL_PATTH = os.getenv("KEY_VALUE_STORE_DB_FULL_PATTH", None)
 
 if CONTAINER_HOSTING_SSH_SETUP_HANDLER_API_KEY is None:
     exit("CONTAINER_HOSTING_SSH_SETUP_HANDLER_API_KEY must be set")
@@ -68,11 +70,41 @@ def store_CONTAINER_HOSTING_API_KEY():
     data = request.json
     APP_NAME = data["APP_NAME"]
     CONTAINER_HOSTING_API_KEY = data["CONTAINER_HOSTING_API_KEY"]
-    # Store APP_NAME and its CONTAINER_HOSTING_API_KEY
     con = sqlite3.connect(APPS_DB_FULL_PATH)
     cur = con.cursor()
     # CREATE TABLE container (container TEXT NOT NULL, CONTAINER_HOSTING_API_KEY TEXT);
+    settings = {"APP_NAME": APP_NAME}
     query = "INSERT INTO container (container, CONTAINER_HOSTING_API_KEY) VALUES (?, ?)"
-    cur.execute(query, (APP_NAME, CONTAINER_HOSTING_API_KEY))
+    cur.execute(query, (json.dumps(settings), CONTAINER_HOSTING_API_KEY))
     con.commit()
-    return CONTAINER_HOSTING_API_KEY
+    return "CONTAINER_HOSTING_API_KEY has been stored"
+
+
+@app.route("/STORE-KEY-VALUE", methods=["POST"])
+@api_key_required
+def store_KEY_VALUE():
+    """
+    Store KEY VALYE in key_value_store.
+
+    Naming convention for key is: "APPNAME:KEY_NAME"
+    
+    e.g. myap:AMBER_SECRET, secret1234
+
+    Store users app AMBER_SECRET 
+    each APP_NAME has its own AMBER_SECRET which is
+    shared with the app owner so that secrets may be stored
+    securely, but also managed decoupled from a specific CI system
+
+    TODO derive key name (app name) from API key
+    """
+    data = request.json
+    APP_NAME = data["APP_NAME"]
+    key = data["KEY"]
+    value = data["VALUE"]
+    con = sqlite3.connect(KEY_VALUE_STORE_DB_FULL_PATTH)
+    cur = con.cursor()
+    query = "INSERT INTO key_value_store (key, value) VALUES (?, ?)"
+    cur.execute(query, (key, value))
+    con.commit()
+    return f"{key} has been stored"
+
