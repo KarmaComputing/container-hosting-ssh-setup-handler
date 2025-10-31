@@ -6,6 +6,25 @@ import functools
 import sqlite3
 import subprocess
 
+PYTHON_LOG_LEVEL = os.getenv("PYTHON_LOG_LEVEL", "DEBUG")
+log = (
+    logging.getLogger()
+)
+handler = logging.StreamHandler()
+formatter = logging.Formatter(
+    "%(asctime)s %(name)-12s %(levelname)-8s %(message)s %(funcName)s %(pathname)s:%(lineno)d"
+)  # noqa
+
+# https://docs.python.org/3/library/logging.html#logging.Handler
+handler.setFormatter(formatter)
+handler.setLevel(
+    PYTHON_LOG_LEVEL
+)  # Both loggers and handlers have a setLevel method  noqa
+log.addHandler(handler)
+
+log.setLevel(PYTHON_LOG_LEVEL)
+
+
 # This is likely not thread safe.
 
 CONTAINER_HOSTING_SSH_SETUP_HANDLER_API_KEY = os.getenv("CONTAINER_HOSTING_SSH_SETUP_HANDLER_API_KEY", None)
